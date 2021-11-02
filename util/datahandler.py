@@ -1,3 +1,8 @@
+# ==========================================================
+# Nov. 2nd 2021
+# Move onto train_model.py workflow.
+# Once trained successfully, delete the commented functions
+# ==========================================================
 import numpy as np
 import random
 import math
@@ -73,7 +78,7 @@ class DataHandler:
     # Print data status
     def print_data_status(self):
         print('\n')
-        print('=== Data Status ===========================================')
+        print('=== Data Status ================================')
         print(f'training sample size: {self.num_train_samples}')
         print(f'eval sample size: {self.num_eval_samples}')
         print(f'batch size: {self.batch_size}')
@@ -84,7 +89,6 @@ class DataHandler:
             print(f'Note: There are {self.num_remainder_from_batching} of unused training samples!')
         print('================================================')
 
-    # REFACTOR AND MAKE BELOW WORK!
     # ==============
     # Public Methods
     # ==============
@@ -100,13 +104,13 @@ class DataHandler:
         # Batch data
         self.batched_training_input_list = self._batch_data(self.shuffled_training_input)
         self.batched_training_label_list = self._batch_data(self.shuffled_training_label)
-        print(len(self.batched_training_input_list))
-        print(len(self.batched_training_label_list))
-        print(self.batched_training_input_list[0].shape)
-        print(self.batched_training_label_list[0].shape)
+        # print(len(self.batched_training_input_list))
+        # print(len(self.batched_training_label_list))
+        # print(self.batched_training_input_list[0].shape)
+        # print(self.batched_training_label_list[0].shape)
 
-    def get_eval_labels_list(self):
-        return self.eval_labels_list
+    def reshape_nparray(self, np_array, shape=[-1, 1]):
+        return np_array.reshape(shape[0], shape[1])
 
     # ================
     # Helper functions
@@ -131,15 +135,12 @@ class DataHandler:
             elif array_dim == 1:
                 batched_data_array_list.append(data_array[begin:begin+self.batch_size])
             else:
-                print('This batching function only handles upto 2d!!')
+                print('This batching function only handles upto 2d data!!')
                 exit(1)
 
             begin += self.batch_size
 
         return batched_data_array_list
-
-    def _reshape_nparray(self, np_array, shape=[-1, 1]):
-        return np_array.reshape(shape[0], shape[1])
 
     def _shuffle_training_data(self):
         # Randomly shuffle the sample index
@@ -162,28 +163,27 @@ class DataHandler:
     # ==================
     # Helper^2 functions
     # ==================
-    def _list_of_list_to_list_of_nparryas(self, list_to_convert=[]):
-        dummy_list = []
-        for element in list_to_convert:
-            dummy_list.append(np.array(element))
-        del list_to_convert
-        return dummy_list
+    # def _list_of_list_to_list_of_nparryas(self, list_to_convert=[]):
+    #     dummy_list = []
+    #     for element in list_to_convert:
+    #         dummy_list.append(np.array(element))
+    #     del list_to_convert
+    #     return dummy_list
 
-    def _get_features_and_label_copy_as_list(self, shuffled_features=[], shuffled_labels=[]):
-        features_list = []
-        for features in self.training_features_list:
-            features_copy = features.copy()
-            features_list.append(features_copy.tolist())
-            shuffled_features.append([])
-
-        labels_list = []
-        for label in self.training_labels_list:
-            label_copy = label.copy()
-            labels_list.append(label_copy.tolist())
-            shuffled_labels.append([])
-
-        return features_list, labels_list, shuffled_features, shuffled_labels
-
+    # def _get_features_and_label_copy_as_list(self, shuffled_features=[], shuffled_labels=[]):
+    #     features_list = []
+    #     for features in self.training_features_list:
+    #         features_copy = features.copy()
+    #         features_list.append(features_copy.tolist())
+    #         shuffled_features.append([])
+    #
+    #     labels_list = []
+    #     for label in self.training_labels_list:
+    #         label_copy = label.copy()
+    #         labels_list.append(label_copy.tolist())
+    #         shuffled_labels.append([])
+    #
+    #     return features_list, labels_list, shuffled_features, shuffled_labels
 
     # =======
     # Methods
