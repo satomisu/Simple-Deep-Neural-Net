@@ -28,6 +28,7 @@ class Recorder:
         self.exp_name = exp_name
         self.exp_outpath = exp_path
         self.records_output_path = None
+        self.output_file_prefix = None
 
         # Lists of paths_list:
         self.measure_list = []
@@ -36,6 +37,7 @@ class Recorder:
 
         # Initialization
         self._initialize()
+        self.print_recorder_setup()
 
     # =================
     # initalization ops
@@ -47,6 +49,7 @@ class Recorder:
 
     def _init_records_output_path(self):
         self.records_output_path = f'{self.exp_outpath}/{self.exp_name}'
+        self.output_file_prefix = f'model_weights_biases_{self.measure_name}'
 
     def _init_output_dir(self):
         name_and_path_util.create_directory_if_it_does_not_exist(self.records_output_path)
@@ -56,6 +59,17 @@ class Recorder:
             self.nbest = NBest(N=self.MAX_KEEP, less_is_better=self.LESS_IS_BETTER)
         else:
             self.nbest = None
+
+    # =====================================
+    # Print the output path and file prefix
+    # =====================================
+    def print_recorder_setup(self):
+        print('\n')
+        print('=== Recorder Status ============================')
+        print(f'Training records will be found at: {self.records_output_path}')
+        print(f'Saved model file prefix: {self.output_file_prefix}')
+        print(f'output is a plk file containing a list: [weights_dict, biases_dict, prediction_label_dict]')
+        print('================================================')
 
     # ============
     # Getters
@@ -68,12 +82,6 @@ class Recorder:
 
     def get_records_output_path_list(self):
         return self.records_output_paths_list
-
-    # ===============
-    # clear directory
-    # ===============
-    def delete_file(self, file_path):
-        os.system(f'rm {file_path}')
 
     # ===================
     # n-best to be saved?
@@ -110,12 +118,12 @@ class Recorder:
             self.delete_file(delete_weights_biases)
 
     def save_model(self, epoch, weights, biases):
-        file_prefix = f'{self.measure_name}_E{epoch}'
+        file_prefix = f'{self.output_file_prefix}_E{epoch}'
         self.save_records(file_prefix, weights, biases)
         self.truncate_lists()
 
     def save_nbest_model(self, new_measure, epoch, weights, biases, prediction_label_dict):
-        file_prefix = f'{self.measure_name}_E{epoch}'
+        file_prefix = f'{self.output_file_prefix}_E{epoch}'
         self.add_measure(new_measure)
         self.add_epoch(epoch)
         self.save_records(file_prefix, weights, biases, prediction_label_dict)
@@ -132,9 +140,13 @@ class Recorder:
     # =========================
     # saving weights and biases
     # =========================
+    def delete_file(self, file_path):
+        os.system(f'rm {file_path}')
+
     def save_records(self, file_name_prefix: str, weights: dict, biases: dict, prediction_label_dict: dict):
         # weights and biases are dictionaries.
         # for each key and value pair, convert the tensor to np array
         save_path = f'{self.records_output_path}/{file_name_prefix}.pkl'
         save_and_load.savePKLdata([weights, biases, prediction_label_dict], save_path)
         self.add_weights_bias_path(save_path)
+
