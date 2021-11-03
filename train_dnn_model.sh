@@ -15,7 +15,7 @@ norm_const=311.17   # Arbitrarily picked from Kuka's sv
 
 # Network parameters
 neur="14 1026 512 256 1"
-acti="relu relu relu None"
+acti="None relu relu relu None"
 
 # Training parameters
 E=2           # Epochs
@@ -23,4 +23,4 @@ batch=100     # Mini-batch size
 lrn_rate=0.1  # Learning rate
 
 # Train the model
-python -m train_model $ODIR 0 $R -dfile $data_path -out_dir_path $out_dir_path -lrn_rate $lrn_rate -epoch $E -minibatch $batch -neurons $neur -acti $acti -bias -P -save_eval_at_each_epoch -norm_const $norm_const
+python -m train_model $ODIR $ID $R -dfile $data_path -out_dir_path $out_dir_path -lrn_rate $lrn_rate -epoch $E -minibatch $batch -neurons $neur -acti $acti -bias -P -save_eval_at_each_epoch -norm_const $norm_const

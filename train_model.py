@@ -13,6 +13,9 @@ import argparse
 # from training.training_parser_util import replace_None, make_keys_list, make_bool_list
 from util import name_and_path_util
 from util.datahandler import DataHandler
+from util.records import Recorder
+from models.simple_dnn import SimpleDNN
+from models.trainer import Trainer
 
 
 def main(cmdl_params):
@@ -50,14 +53,22 @@ def main(cmdl_params):
     # Set up output directory
     name_and_path_util.create_directory_if_it_does_not_exist(output_dir_path)
 
+    # =========================
+    # Network layers dictionary
+    # =========================
+    network_layers_dict = make_layers_dict(layer_keys_list,
+                                           neurons_list,
+                                           activations_list,
+                                           biases_list)
+
     # ===============================
     # To be collected during training
     # ===============================
     best_weights_prediction_paths_list = []
 
-    # =====================================
-    # Create DataHandler and Config objects
-    # =====================================
+    # =======================================
+    # Create DataHandler and Recorder Objects
+    # =======================================
     # DataHandler
     data_handler = init_data_handler(training_data_path,
                                      num_batches,
@@ -68,7 +79,37 @@ def main(cmdl_params):
     data_handler.print_data_status()
     data_handler.batch_training_data()
 
-    exit(0)
+    # Recorder
+    recorder = Recorder(save_nbest=True,
+                        nbest=3,
+                        max_keep=3,
+                        save_step=10,
+                        less_is_better=True,
+                        exp_name=experiment_name,
+                        exp_path=output_dir_path,
+                        measure_name='L2')
+
+    # =================================
+    # Create Model and Trainer Objects
+    # =================================
+
+    dnn_model = SimpleDNN(layer_keys_list,
+                          network_layers_dict,
+                          input_shape_tuple=(0, neurons_list[0]),
+                          output_shape_tuple=(0, neurons_list[-1]),
+                          num_input_features=neurons_list[0]
+                          )
+
+    trainer = Trainer(dnn_model,
+                      recorder,
+                      data_handler,
+                      epoch=epoch,
+                      learning_rate=learning_rate,
+                      num_batches=num_batches,
+                      optimizer_name='optimizer',
+                      loss_name='L2',
+                      print_step=100)
+
 
 #     # ============
 #     # Run training
@@ -153,6 +194,25 @@ def main(cmdl_params):
 #     baseline_best_data_path = baseline_trainer.get_best_weights_biases_save_paths()
 #
 #     return baseline_best_data_path, baseline_loss, baseline_list, eval_prediction_at_each_epoch_dict
+
+
+# ====
+# Util
+# ====
+def make_layers_dict(layer_keys_list,
+                     neurons_list,
+                     activations_list,
+                     biases_list
+                     ):
+    layers_dict = {}
+    for i in range(len(layer_keys_list)):
+        layer_key = layer_keys_list[i]
+        layers_dict[layer_key] = {'neurons': neurons_list[i],
+                                  'activation': activations_list[i],
+                                  'bias': biases_list[i],
+                                  'layer_name': layer_key
+                                  }
+    return layers_dict
 
 
 # ====
@@ -323,7 +383,7 @@ def training_parser():
     error_message_list = []
 
     # 1) Number of neurons and number of activations must match.
-    if not len(args.neurons) == len(args.acti)+1:
+    if not len(args.neurons) == len(args.acti):
         error_message = 'number of elements provided to -neurons should be one larger than the number of elements provided to -acti!'
         error_message_list.append(error_message)
 
