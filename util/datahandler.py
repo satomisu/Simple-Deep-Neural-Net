@@ -28,6 +28,8 @@ class DataHandler:
         self.evaluation_label = np.array(evaluation_label)
         self.num_batches = num_batches
         self.norm_const = norm_const
+        self.input_feature_dim = input_feature_dim
+        self.output_feature_dim = label_dim
         self.input_shape_np = [-1, input_feature_dim]
         self.label_shape_np = [-1, label_dim]
 
@@ -49,17 +51,23 @@ class DataHandler:
     # Initialization op
     # =================
     def _initialize(self):
-        self.__init_num_samples()
-        self.__init_batch_size()
-        self.__init_shuffled_training_data()
+        self._init_num_samples()
+        self._init_batch_size()
+        self._init_shuffled_training_data()
 
     # Assigns number of training and evaluation samples.
-    def __init_num_samples(self):
+    def _init_num_samples(self):
         self.num_train_samples = self.training_input.shape[0]
         self.num_eval_samples = self.evaluation_input.shape[0]
 
+    def _init_eval_data(self):
+        self.evaluation_input = self.reshape_nparray(self.evaluation_input,
+                                                     shape=[self.num_eval_samples, self.input_feature_dim])
+        self.evaluation_label = self.reshape_nparray(self.evaluation_label,
+                                                     shape=[self.num_eval_samples, self.output_feature_dim])
+
     # Computes number of samples in a minibatch.
-    def __init_batch_size(self):
+    def _init_batch_size(self):
         if self.num_train_samples is not 0:
             self.batch_size = math.floor(self.num_train_samples/self.num_batches)
             self.num_remainder_from_batching = self.num_train_samples % self.batch_size
@@ -67,11 +75,11 @@ class DataHandler:
             print('there is no data.... fatal situation!')
             exit(1)
 
-    def __init_shuffled_training_data(self):
+    def _init_shuffled_training_data(self):
         self.shuffled_training_input = np.zeros(self.num_train_samples).tolist()
         self.shuffled_training_label = np.zeros(self.num_train_samples).tolist()
 
-    def __init_batched_training_data_lists(self):
+    def _init_batched_training_data_lists(self):
         self.batched_training_input_list = None
         self.batched_training_label_list = None
 
@@ -99,7 +107,7 @@ class DataHandler:
         self._shuffle_training_data()
 
         # Initialize batched data list
-        self.__init_batched_training_data_lists()
+        self._init_batched_training_data_lists()
 
         # Batch data
         self.batched_training_input_list = self._batch_data(self.shuffled_training_input)
@@ -130,13 +138,18 @@ class DataHandler:
         for batch_num in range(self.num_batches):
             # When 2-d array
             if array_dim == 2:
-                batched_data_array_list.append(data_array[begin:begin+self.batch_size, :])
+                data_batch = data_array[begin:begin+self.batch_size, :]
+                num_features = len(data_batch[0].tolist())
             # When 1-d
             elif array_dim == 1:
-                batched_data_array_list.append(data_array[begin:begin+self.batch_size])
+                data_batch = data_array[begin:begin+self.batch_size]
+                num_features = 1    # If array dimension is one, then number of features is 1
             else:
                 print('This batching function only handles upto 2d data!!')
                 exit(1)
+            data_batch = self.reshape_nparray(data_batch,
+                                              shape=[self.batch_size, num_features])
+            batched_data_array_list.append(data_batch)
 
             begin += self.batch_size
 
@@ -148,7 +161,7 @@ class DataHandler:
         random.shuffle(indices)
 
         # Initialize shuffled training input and label
-        self.__init_shuffled_training_data()
+        self._init_shuffled_training_data()
 
         # Shuffle the sample
         for i in range(len(indices)):
