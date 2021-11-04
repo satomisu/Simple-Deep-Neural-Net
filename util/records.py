@@ -70,6 +70,7 @@ class Recorder:
         print(f'Saved model file prefix: {self.output_file_prefix}')
         print(f'output is a plk file containing a list: [weights_dict, biases_dict, prediction_label_dict]')
         print('================================================')
+        print('\n')
 
     # ============
     # Getters

@@ -239,6 +239,7 @@ class SimpleDNN:
         self.init_io_placeholder_dicts()
         self._build_simple_dnn()
 
+    # Tested
     def _build_simple_dnn(self):
         for i in range(len(self.layer_keys_list)):
             layer_key = self.layer_keys_list[i]
@@ -248,6 +249,9 @@ class SimpleDNN:
             activation = layer_spec['activation']
 
             if i == 0:
+                # i == 0 is the input and should be ignored.
+                pass
+            elif i == 1:
                 layer = self.build_simple_layer(layer_key=layer_name,
                                                 in_neuron=self.num_input_features,
                                                 out_neuron=out_size,
@@ -366,6 +370,7 @@ class SimpleDNN:
     # ====
     # Util
     # ====
+    # Tested
     def show_model_trainables(self, graph):
         with tf.compat.v1.Session(graph=graph):
             # The next two lines return identical list
@@ -377,6 +382,7 @@ class SimpleDNN:
             print(f'    is trainable: {element.trainable}')
             print(f'    shape: {element.shape}')
 
+    # Tested
     def show_model_collections(self, graph):
         # Gets names of collection of this graph.
         with tf.compat.v1.Session(graph=graph):
@@ -385,6 +391,7 @@ class SimpleDNN:
         for element in collection_list:
             print(element)
 
+    # Tested
     def show_model_variables(self, graph):
         with tf.compat.v1.Session(graph=graph):
             variables = graph.get_collection_ref(name='variables')
@@ -393,6 +400,7 @@ class SimpleDNN:
             print(element.name)
             print(element.trainable)
 
+    # Tested
     def show_model_ops(self, graph):
         with tf.compat.v1.Session(graph=graph):
             ops = graph.get_collection_ref(name='train_op')

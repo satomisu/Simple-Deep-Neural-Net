@@ -437,10 +437,14 @@ class Trainer:
         # Session, initialized by self.init_session()
         self.sess = None
         self.placeholder_dict = None
-        self.eval_loss_feed_dict = None
+        self.eval_label_feed_dict = None
         self.eval_input_features_feed_dict = None
         self.eval_sample_size_list = None
         self.eval_labels_list = None
+
+        # Eval data
+        self.eval_data_feed_dict = {}
+        self.eval_input_feed_dict = {}
 
         # Training record
         self.eval_loss_list = []
@@ -448,8 +452,6 @@ class Trainer:
         self.eval_prediction_dict = {}
 
         self._initialization_op(model)
-
-        exit(0)
 
     # =================
     # Initializaion ops
@@ -459,7 +461,9 @@ class Trainer:
         self.initialize_trainer_base()
         self.init_session()
         self.model.show_model_trainables(self.graph)
-        exit(0)
+        self.model.show_model_collections(self.graph)
+        self.model.show_model_variables(self.graph)
+        self.model.show_model_ops(self.graph)
         self.init_eval_data_dict()
 
     # Tested
@@ -473,8 +477,8 @@ class Trainer:
         self.assign_model(model)
         self.assign_graph(graph)
 
-        self.placeholder_dict = {'input_ph_dict': self.model.input_placeholder,
-                                 'label_ph_dict': self.model.output_placeholder
+        self.placeholder_dict = {'input_ph': self.model.input_placeholder,
+                                 'output_ph': self.model.output_placeholder
                                  }
 
     def assign_model(self, model):
@@ -507,12 +511,11 @@ class Trainer:
         self.sess = tf.compat.v1.Session(graph=self.graph)
         self.sess.run(self.graph_initialization_op)
 
-    # Currently Worked On
+    # Tested
     def init_eval_data_dict(self):
-        self.eval_loss_feed_dict = self.data_handler.get_eval_loss_feed_dict()
-        self.eval_sample_size_list = self.data_handler.get_eval_sample_size_list()
-        self.eval_labels_list = self.data_handler.get_eval_labels_list()
-        self.eval_input_features_feed_dict = self.data_handler.get_eval_input_features_feed_dict()
+        self.eval_data_feed_dict = {self.placeholder_dict['input_ph']: self.data_handler.evaluation_input,
+                                    self.placeholder_dict['output_ph']: self.data_handler.evaluation_label}
+        self.eval_input_feed_dict = {self.placeholder_dict['input_ph']: self.data_handler.evaluation_input}
 
     # =======
     # Getters
@@ -553,10 +556,15 @@ class Trainer:
         self.time_1 = time.time()
         for epoch in range(self.epoch):
             self.data_handler.batch_training_data()
+            training_inputs = self.data_handler.get_batched_training_input_list()
+            training_label = self.data_handler.get_batched_training_label_list()
+
             # Train
             for batch in range(self.num_batches):
                 # sgd
-                feed_dict = self.data_handler.get_training_feed_dict(batch)
+                #feed_dict = self.data_handler.get_training_feed_dict(batch)
+                feed_dict = {self.placeholder_dict['input_ph']: training_inputs[batch],
+                             self.placeholder_dict['output_ph']: training_label[batch]}
                 _, cost = self.sess.run([self.optimization_op, self.loss_op], feed_dict)
 
                 print_message = self._print_message(sgd_step, self.print_step)
@@ -653,12 +661,12 @@ class Trainer:
             return False
 
     def _record_eval_data(self):
-        loss = self.sess.run(self.loss_op, self.eval_loss_feed_dict[self.task_list[0]])
+        loss = self.sess.run(self.loss_op, self.eval_label_feed_dict[self.task_list[0]])
         self.eval_loss_list[0].append(loss)
         return loss
 
     def _get_eval_loss(self):
-        loss = self.sess.run(self.loss_op, self.eval_loss_feed_dict[self.task_list[0]])
+        loss = self.sess.run(self.loss_op, self.eval_label_feed_dict[self.task_list[0]])
 
         return loss
 

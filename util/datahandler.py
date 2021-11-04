@@ -173,6 +173,12 @@ class DataHandler:
         self.shuffled_training_input = np.array(self.shuffled_training_input)
         self.shuffled_training_label = np.array(self.shuffled_training_label)
 
+    def get_batched_training_input_list(self):
+        return self.batched_training_input_list
+
+    def get_batched_training_label_list(self):
+        return self.batched_training_label_list
+
     # ==================
     # Helper^2 functions
     # ==================
