@@ -12,7 +12,7 @@ class Recorder:
                  save_step=10,
                  less_is_better=True,
                  exp_name='EXP01R01',
-                 exp_path='.',
+                 output_path='.',
                  measure_name='MSE'):
 
         self.MAX_KEEP = max_keep
@@ -26,7 +26,7 @@ class Recorder:
 
         # Output paths
         self.exp_name = exp_name
-        self.exp_outpath = exp_path
+        self.exp_outpath = output_path
         self.records_output_path = None
         self.output_file_prefix = None
 
@@ -115,7 +115,7 @@ class Recorder:
         while len(self.measure_list) > self.MAX_KEEP:
             self.measure_list.pop(0)
             self.epoch_list.pop(0)
-            delete_weights_biases = self.records_output_path.pop(0)
+            delete_weights_biases = self.records_output_paths_list.pop(0)
             self.delete_file(delete_weights_biases)
 
     def save_model(self, epoch, weights, biases):
@@ -128,12 +128,17 @@ class Recorder:
         self.add_measure(new_measure)
         self.add_epoch(epoch)
         self.save_records(file_prefix, weights, biases, prediction_label_dict)
-        self.measure_list, self.epoch_list, self.records_output_path, delete_list = self.nbest.pop_worst(self.measure_list,
-                                                                                                         self.epoch_list,
-                                                                                                         self.records_output_path)
-        self.measure_list, self.epoch_list, self.records_output_path = self.nbest.sort_measure(self.measure_list,
-                                                                                               self.epoch_list,
-                                                                                               self.records_output_path)
+        self.measure_list, \
+            self.epoch_list, \
+            self.records_output_paths_list, \
+            delete_list = self.nbest.pop_worst(self.measure_list,
+                                               self.epoch_list,
+                                               self.records_output_paths_list)
+        self.measure_list, \
+            self.epoch_list, \
+            self.records_output_paths_list = self.nbest.sort_measure(self.measure_list,
+                                                                     self.epoch_list,
+                                                                     self.records_output_paths_list)
 
         for a_file in delete_list:
             self.delete_file(a_file)
@@ -148,6 +153,12 @@ class Recorder:
         # weights and biases are dictionaries.
         # for each key and value pair, convert the tensor to np array
         save_path = f'{self.records_output_path}/{file_name_prefix}.pkl'
-        save_and_load.savePKLdata([weights, biases, prediction_label_dict], save_path)
+        save_and_load.savePKLdata([weights,
+                                   biases,
+                                   prediction_label_dict],
+                                  save_path)
         self.add_weights_bias_path(save_path)
 
+    def save_data_to_pkl(self, file_prefix, data_):
+        outpath = f'{self.records_output_path}/{file_prefix}.pkl'
+        return save_and_load.savePKLdata(data_, outpath)

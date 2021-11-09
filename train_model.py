@@ -6,12 +6,14 @@
 import numpy as np
 import tensorflow as tf
 import argparse
+import matplotlib.pyplot as plt
 
 from util import name_and_path_util
 from util.datahandler import DataHandler
 from util.records import Recorder
 from models.simple_dnn import SimpleDNN
 from models.trainer import Trainer
+from util import save_and_load
 
 
 def main(cmdl_params):
@@ -42,9 +44,7 @@ def main(cmdl_params):
     # Ge necessary names and paths
     output_dir_path = name_and_path_util.get_output_directory_path(output_path, output_dir_name)
     experiment_name = name_and_path_util.get_experiment_name(exp_id)
-    best_weights_and_prediction_path_file_prefix = name_and_path_util.get_best_weights_and_prediction_file_prefix(experiment_name, run_number)
     loss_file_prefix = name_and_path_util.get_loss_file_prefix(experiment_name, run_number)
-    prediction_at_each_epoch_dict_prefix = name_and_path_util.get_prediction_at_each_epoch_dict_prefix(experiment_name, run_number)
 
     # Set up output directory
     name_and_path_util.create_directory_if_it_does_not_exist(output_dir_path)
@@ -56,11 +56,6 @@ def main(cmdl_params):
                                            neurons_list,
                                            activations_list,
                                            biases_list)
-
-    # ===============================
-    # To be collected during training
-    # ===============================
-    best_weights_prediction_paths_list = []
 
     # =======================================
     # Create DataHandler and Recorder Objects
@@ -80,7 +75,7 @@ def main(cmdl_params):
                         save_step=10,
                         less_is_better=True,
                         exp_name=experiment_name,
-                        exp_path=output_dir_path,
+                        output_path=output_dir_path,
                         measure_name='L2')
 
     # =================================
@@ -104,43 +99,68 @@ def main(cmdl_params):
                       loss_name='L2',
                       print_step=100)
 
+    # Train the model
     trainer.train()
 
-#     # ============
-#     # Run training
-#     # ============
+    # Get loss per epoch list and save this
+    loss_per_epoch = trainer.get_eval_loss()
+    loss_file_path = recorder.save_data_to_pkl(loss_file_prefix, loss_per_epoch)
 
-#     # Train
-#     best_data_path, loss_list, robot_list, eval_pred_dict = train_baseline(config)
-#     # Organize data
-#     best_weights_prediction_paths_list.append(best_data_path)
-#     loss_dict['robot_list'] = robot_list
-#     loss_dict['loss_list'] = loss_list
-#
-#     # save the best training data paths and losses
-#     np.save(f'{output_dir_path}/{best_weights_prediction_file_prefix}.npy', best_weights_prediction_paths_list)
-#     np.savez(f'{output_dir_path}/{loss_file_prefix}.npz', **{key: val for key, val in loss_dict.items()})
-#     np.savez(f'{output_dir_path}/{prediction_at_each_epoch_dict_prefix}.npz', **{key: val for key, val in eval_pred_dict.items()})
+    # Get best prediction paths:
+    best_epoch_paths = trainer.get_best_weights_biases_save_paths()
 
-# # Train the model
-# def train_baseline(config):
-#     baseline_model = SimpleDNN(task_list=config.robot_list,
-#                                layer_keys_list=config.layer_keys_list,
-#                                layer_dict=config.layers_dict,
-#                                input_shape_tf=config.input_shape_tf,
-#                                label_shape_tf=config.label_shape_tf,
-#                                num_input_features=config.num_input_features
-#                                )
-#     baseline_trainer = BaselineTrainer(config, baseline_model)
-#     baseline_trainer.train()
-#     baseline_loss, baseline_list = baseline_trainer.get_eval_loss_and_task_list()
-#     eval_prediction_at_each_epoch_dict = baseline_trainer.get_eval_prediction_dictionary()
-#     baseline_best_loss = baseline_trainer.get_best_loss_list()
-#     baseline_best_epoch = baseline_trainer.get_best_epoch_list()
-#     baseline_trainer.close_session()
-#     baseline_best_data_path = baseline_trainer.get_best_weights_biases_save_paths()
-#
-#     return baseline_best_data_path, baseline_loss, baseline_list, eval_prediction_at_each_epoch_dict
+    # Then look at training results
+    # Plot learning curve
+    plot_learning_curve(loss_file_path)
+    # Plot pred. vs. truth
+    plot_prediction_vs_truth(best_epoch_paths[-1])
+
+
+# =====
+# Plots
+# =====
+def plot_learning_curve(loss_file_path):
+    def get_file_prefix():
+        temp_list = loss_file_path.split('.')
+        temp_list_len = len(temp_list)
+        temp_list = temp_list[0:temp_list_len-1]
+        return '.'.join(temp_list)
+
+    file_prefix = get_file_prefix()
+
+    loss_per_epoch = save_and_load.load_pkl_data(loss_file_path)
+    epoch = len(loss_per_epoch)
+    x = np.arange(0, epoch)
+    plt.clf()
+    fig = plt.figure()
+    plt.plot(x, np.array(loss_per_epoch))
+    plt.xlabel('epoch')
+    plt.ylabel('loss')
+    fig.savefig(f'{file_prefix}.png', bbox_inches='tight')
+
+
+def plot_prediction_vs_truth(file_path):
+    def get_file_prefix():
+        temp_list = file_path.split('.')
+        temp_list_len = len(temp_list)
+        temp_list = temp_list[0:temp_list_len-1]
+        return '.'.join(temp_list)
+
+    file_prefix = get_file_prefix()
+
+    data_list = save_and_load.load_pkl_data(file_path)
+    prediction_data_dict = data_list[-1]
+    label = prediction_data_dict['label']
+    prediction = prediction_data_dict['prediction']
+
+    plt.clf()
+    fig = plt.figure()
+    plt.plot(prediction, label, marker='.', ls=' ')
+    plt.xlabel('truth')
+    plt.ylabel('prediction')
+    fig.savefig(f'{file_prefix}_prediction_vs_truth.png', bbox_inches='tight')
+
+
 
 
 # ====

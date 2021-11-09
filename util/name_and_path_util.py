@@ -19,8 +19,13 @@ def get_prediction_at_each_epoch_dict_prefix(exp_name, run_number):
     return prediction_file_name
 
 
+def get_prediction_file_prefix(experiment_name, run_number):
+    file_name = f'{experiment_name}_R{run_number}_prediction'
+    return file_name
+
+
 def get_loss_file_prefix(exp_name, run_number):
-    loss_file_prefix = f'{exp_name}_R{run_number}_losses_dict'
+    loss_file_prefix = f'{exp_name}_R{run_number}_eval_losses'
     return loss_file_prefix
 
 

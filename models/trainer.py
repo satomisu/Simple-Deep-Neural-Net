@@ -130,7 +130,7 @@ class Trainer:
         return self.eval_prediction_dict
 
     def get_best_weights_biases_save_paths(self):
-        return self.recorder.weights_biases_data_paths[-1]
+        return self.recorder.get_records_output_path_list()
 
     def get_eval_loss(self):
         return self.eval_loss_list
@@ -189,10 +189,6 @@ class Trainer:
             current_eval_loss = self._record_eval_data()
             self.save_model(epoch, current_eval_loss)
 
-            # self._record_eval_prediction_at_each_epoch()
-            # if epoch == (self.epoch - 1):
-            #     self._make_eval_prediction_dict_with_label_iunfo()
-
     def predict(self, return_dict=False):
         # Get input feed dict
         _input = self.data_handler.random_eval_inputs
@@ -227,23 +223,6 @@ class Trainer:
 
     def close_session(self):
         self.sess.close()
-
-    # ================
-    # Helper Functions
-    # ================
-    def _record_eval_prediction_at_each_epoch(self):
-        if self.record_eval_at_each_epoch:
-            prediction = self.predict(return_dict=False)
-            self.eval_prediction_list.append(prediction[0])
-
-    def _make_eval_prediction_dict_with_label_iunfo(self):
-        if self.record_eval_at_each_epoch:
-            prediction_dict = self.predict(return_dict=True)
-            robot = list(prediction_dict.keys())[0]
-            data_dict = prediction_dict[robot]
-            self.eval_prediction_dict['input'] = data_dict['input']
-            self.eval_prediction_dict['label'] = data_dict['label']
-            self.eval_prediction_dict['predictions'] = self.eval_prediction_list
 
     def _weights_and_biases_tensors_to_nparray(self):
         weights_array_dict = {}
@@ -301,21 +280,7 @@ class Trainer:
         self.model.show_model_trainables(self.graph)
 
     def clear_all_records(self, ckpt=False, tensorboard=False):
-        self.clear_log_dir()
         self.clear_weights_bias_dir()
-        if ckpt:
-            self.clear_checkpoint_dir()
-        if tensorboard:
-            self.clear_tensorboard_dir()
-
-    def clear_log_dir(self):
-        self.recorder.clear_log_dir()
-
-    def clear_tensorboard_dir(self):
-        self.recorder.clear_tensorboard_dir()
-
-    def clear_checkpoint_dir(self):
-        self.recorder.clear_checkpoint_dir()
 
     def clear_weights_bias_dir(self):
         self.recorder.clear_weights_bias_dir()
@@ -323,7 +288,6 @@ class Trainer:
     def print_trainer_info(self):
         print('\n')
         print('=== Trainer Info ===')
-        #print(f'task list: {self.task_list}')
 
     def plot_prediction(self, show=True):
         prediction_list = self.predict()
