@@ -18,8 +18,8 @@ neur="14 1026 512 256 1"
 acti="None relu relu relu None"
 
 # Training parameters
-E=2           # Epochs
-batch=100     # Mini-batch size
+E=200         # Epochs
+batch=100 # Mini-batch size
 lrn_rate=0.1  # Learning rate
 
 # Train the model

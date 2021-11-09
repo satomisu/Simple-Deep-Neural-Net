@@ -43,6 +43,8 @@ class DataHandler:
         self.batched_training_input_list = []
         self.batched_training_label_list = []
         self.training_feed_dict = OrderedDict()
+        self.random_eval_inputs = None
+        self.random_eval_labels = None
 
         # Initialize
         self._initialize()
@@ -54,6 +56,43 @@ class DataHandler:
         self._init_num_samples()
         self._init_batch_size()
         self._init_shuffled_training_data()
+        self._init_dtype_float32()
+
+    def _init_dtype_float32(self):
+        if not self.training_input.dtype == np.float32:
+            self.training_input = self.convert_to_float32(self.training_input)
+        if not self.training_label.dtype == np.float32:
+            self.training_label = self.convert_to_float32(self.training_label)
+        if not self.evaluation_input.dtype == np.float32:
+            self.evaluation_input = self.convert_to_float32(self.evaluation_input)
+        if not self.evaluation_label.dtype == np.float32:
+            self.evaluation_label = self.convert_to_float32(self.evaluation_label)
+
+    def convert_to_float32(self, an_array):
+        # Only works for upto 2d array
+        dim = len(an_array.shape)
+        if dim == 1:
+            num_elements = len(an_array)
+            new_array = np.zeros(num_elements, dtype=np.float32)
+            for ele in range(num_elements):
+                data = an_array[ele]
+                data = np.float32(data)
+                new_array[ele] = data
+            return new_array
+
+        elif dim == 2:
+            num_rows = an_array.shape[0]
+            num_cols = an_array.shape[1]
+            new_array = np.zeros((num_rows, num_cols), dtype=np.float32)
+            for row in range(num_rows):
+                for col in range(num_cols):
+                    data = an_array[row, col]
+                    data = np.float32(data)
+                    new_array[row, col] = data
+            return new_array
+        else:
+            print('data dimension is larger than 2!')
+            exit(0)
 
     # Assigns number of training and evaluation samples.
     def _init_num_samples(self):
@@ -61,10 +100,18 @@ class DataHandler:
         self.num_eval_samples = self.evaluation_input.shape[0]
 
     def _init_eval_data(self):
-        self.evaluation_input = self.reshape_nparray(self.evaluation_input,
-                                                     shape=[self.num_eval_samples, self.input_feature_dim])
-        self.evaluation_label = self.reshape_nparray(self.evaluation_label,
-                                                     shape=[self.num_eval_samples, self.output_feature_dim])
+        rand_eval_indices = random.sample(np.arange(0, self.num_eval_samples).tolist(), self.batch_size)
+        randomly_sampled_eval_input = np.zeros((self.batch_size, self.input_feature_dim), dtype=np.float32)
+        randomly_sampled_eval_label = np.zeros(self.batch_size, dtype=np.float32)
+        i = 0
+        for index in rand_eval_indices:
+            randomly_sampled_eval_input[i, :] = self.evaluation_input[index, :]
+            randomly_sampled_eval_label[i] = self.evaluation_label[index]
+            i += 1
+        randomly_sampled_eval_label = self.reshape_nparray(randomly_sampled_eval_label,
+                                                           shape=[self.batch_size, 1])
+        self.random_eval_inputs = randomly_sampled_eval_input
+        self.random_eval_labels = randomly_sampled_eval_label
 
     # Computes number of samples in a minibatch.
     def _init_batch_size(self):
@@ -75,9 +122,17 @@ class DataHandler:
             print('there is no data.... fatal situation!')
             exit(1)
 
+        if self.batch_size > self.num_eval_samples:
+            print(f'The number of samples in a minibatch needs to be smaller'
+                  f'than the number of evaluation samples.'
+                  f'This is due to the implementation details.'
+                  f'minibatch size: {self.batch_size}'
+                  f'eval samples: {self.num_eval_samples}')
+            exit(0)
+
     def _init_shuffled_training_data(self):
-        self.shuffled_training_input = np.zeros(self.num_train_samples).tolist()
-        self.shuffled_training_label = np.zeros(self.num_train_samples).tolist()
+        self.shuffled_training_input = np.zeros((self.num_train_samples, self.input_feature_dim))
+        self.shuffled_training_label = np.zeros(self.num_train_samples)
 
     def _init_batched_training_data_lists(self):
         self.batched_training_input_list = None
@@ -102,20 +157,13 @@ class DataHandler:
     # ==============
     def batch_training_data(self):
         # NOTE: This is written for 2d input data
-
         # Randomly shuffle data
         self._shuffle_training_data()
-
         # Initialize batched data list
         self._init_batched_training_data_lists()
-
         # Batch data
         self.batched_training_input_list = self._batch_data(self.shuffled_training_input)
         self.batched_training_label_list = self._batch_data(self.shuffled_training_label)
-        # print(len(self.batched_training_input_list))
-        # print(len(self.batched_training_label_list))
-        # print(self.batched_training_input_list[0].shape)
-        # print(self.batched_training_label_list[0].shape)
 
     def reshape_nparray(self, np_array, shape=[-1, 1]):
         return np_array.reshape(shape[0], shape[1])
@@ -127,7 +175,6 @@ class DataHandler:
         # Only deals with upto 2-d array!!
         # Get dimensions of the array
         array_dim = len(data_array.shape)
-
         # To be returned
         batched_data_array_list = []
 
@@ -157,7 +204,7 @@ class DataHandler:
 
     def _shuffle_training_data(self):
         # Randomly shuffle the sample index
-        indices = list(range(self.num_train_samples))
+        indices = list(range(self.num_eval_samples))
         random.shuffle(indices)
 
         # Initialize shuffled training input and label
@@ -166,7 +213,7 @@ class DataHandler:
         # Shuffle the sample
         for i in range(len(indices)):
             index = indices[i]
-            self.shuffled_training_input[i] = self.training_input[index, :]
+            self.shuffled_training_input[i, :] = self.training_input[index, :]
             self.shuffled_training_label[i] = self.training_label[index]
 
         # Convert back to array
@@ -178,116 +225,3 @@ class DataHandler:
 
     def get_batched_training_label_list(self):
         return self.batched_training_label_list
-
-    # ==================
-    # Helper^2 functions
-    # ==================
-    # def _list_of_list_to_list_of_nparryas(self, list_to_convert=[]):
-    #     dummy_list = []
-    #     for element in list_to_convert:
-    #         dummy_list.append(np.array(element))
-    #     del list_to_convert
-    #     return dummy_list
-
-    # def _get_features_and_label_copy_as_list(self, shuffled_features=[], shuffled_labels=[]):
-    #     features_list = []
-    #     for features in self.training_features_list:
-    #         features_copy = features.copy()
-    #         features_list.append(features_copy.tolist())
-    #         shuffled_features.append([])
-    #
-    #     labels_list = []
-    #     for label in self.training_labels_list:
-    #         label_copy = label.copy()
-    #         labels_list.append(label_copy.tolist())
-    #         shuffled_labels.append([])
-    #
-    #     return features_list, labels_list, shuffled_features, shuffled_labels
-
-    # =======
-    # Methods
-    # =======
-    # def get_training_feed_dict(self, batch_num: int, multitask_grad_balance=False):
-    #     self.training_feed_dict = {}
-    #     if self.multimodal:
-    #         pass
-    #     elif self.multitask:
-    #         input_feature = self.batched_training_features_list[0][batch_num]
-    #         if multitask_grad_balance:
-    #             for i in range(len(self.task_list)):
-    #                 task = self.task_list[i]
-    #                 label = self.batched_training_labels_list[i][batch_num]
-    #                 self.training_feed_dict[task] = {self.input_placeholder_dict['input']: self._reshape_nparray(input_feature, shape=self.input_shape_np),
-    #                                                  self.label_placeholder_dict[task]: self._reshape_nparray(label, shape=self.label_shape_np)
-    #                                                  }
-    #         else:
-    #             self.training_feed_dict[self.input_placeholder_dict['input']] = self._reshape_nparray(input_feature, shape=self.input_shape_np)
-    #             for i in range(len(self.task_list)):
-    #                 task = f'{self.task_list[i]}'
-    #                 label = self.batched_training_labels_list[i][batch_num]
-    #                 self.training_feed_dict[self.label_placeholder_dict[task]] = self._reshape_nparray(label, shape=self.label_shape_np)
-    #     else:
-    #         input_feature = self.batched_training_features_list[0][batch_num]
-    #         self.training_feed_dict[self.input_placeholder_dict['input']] = self._reshape_nparray(input_feature,                                                                                                      shape=self.input_shape_np)
-    #
-    #         for i in range(len(self.task_list)):
-    #             task = f'{self.task_list[i]}'
-    #             label = self.batched_training_labels_list[i][batch_num]
-    #             self.training_feed_dict[self.label_placeholder_dict[task]] = self._reshape_nparray(label,
-    #                                                                                                shape=self.label_shape_np)
-    #
-    #     return self.training_feed_dict
-    #
-    # def get_eval_loss_feed_dict(self):
-    #     eval_feed_dict = {}
-    #     if self.multimodal:
-    #         pass
-    #     elif self.multitask:
-    #         formatted_eval_features = self._reshape_nparray(self.eval_features_list[0], shape=self.input_shape_np)
-    #         i = 0
-    #         for task in self.task_list:
-    #             formatter_eval_label = self._reshape_nparray(self.eval_labels_list[i], shape=self.label_shape_np)
-    #             eval_feed_dict[task] = {self.input_placeholder_dict['input']: formatted_eval_features,
-    #                                     self.label_placeholder_dict[task]: formatter_eval_label
-    #                                     }
-    #             i += 1
-    #     elif self.transfer:
-    #         task = self.task_list[0]
-    #         formatted_eval_features = self._reshape_nparray(self.eval_features_list[0], shape=self.input_shape_np)
-    #         formatted_eval_label = self._reshape_nparray(self.eval_labels_list[0], shape=self.label_shape_np)
-    #         eval_feed_dict[task] = {self.input_placeholder_dict['input']: formatted_eval_features,
-    #                                 self.label_placeholder_dict[task]: formatted_eval_label}
-    #     else:
-    #         task = self.task_list[0]
-    #         formatted_eval_features = self._reshape_nparray(self.eval_features_list[0], shape=self.input_shape_np)
-    #         formatted_eval_label = self._reshape_nparray(self.eval_labels_list[0], shape=self.label_shape_np)
-    #         eval_feed_dict[task] = {self.input_placeholder_dict['input']: formatted_eval_features,
-    #                                 self.label_placeholder_dict[task]: formatted_eval_label}
-    #
-    #     return eval_feed_dict
-    #
-    # def get_eval_input_features_feed_dict(self):
-    #     eval_features_dict = {}
-    #     if self.multimodal:
-    #         pass
-    #     elif self.multitask:
-    #         formatted_eval_features = self._reshape_nparray(self.eval_features_list[0], shape=self.input_shape_np)
-    #         for task in self.task_list:
-    #             eval_features_dict[task] = {self.input_placeholder_dict['input']: formatted_eval_features}
-    #     elif self.transfer:
-    #         task = self.task_list[0]
-    #         formatted_eval_features = self._reshape_nparray(self.eval_features_list[0], shape=self.input_shape_np)
-    #         eval_features_dict[task] = {self.input_placeholder_dict['input']: formatted_eval_features}
-    #     else:
-    #         task = self.task_list[0]
-    #         formatted_eval_features = self._reshape_nparray(self.eval_features_list[0], shape=self.input_shape_np)
-    #         eval_features_dict[task] = {self.input_placeholder_dict['input']: formatted_eval_features}
-    #
-    #     return eval_features_dict
-    #
-    # def get_eval_sample_size_list(self):
-    #     sample_size_list = []
-    #     for eval_label_samples in self.eval_labels_list:
-    #         sample_size_list.append(len(eval_label_samples))
-    #     return sample_size_list
-

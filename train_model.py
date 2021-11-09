@@ -76,8 +76,6 @@ def main(cmdl_params):
                                      input_feature_dim=neurons_list[0],
                                      label_dim=neurons_list[-1]
                                      )
-    data_handler.print_data_status()
-    data_handler.batch_training_data()
 
     # Recorder
     recorder = Recorder(save_nbest=True,
@@ -95,8 +93,8 @@ def main(cmdl_params):
 
     dnn_model = SimpleDNN(layer_keys_list,
                           network_layers_dict,
-                          input_shape_tuple=(0, neurons_list[0]),
-                          output_shape_tuple=(0, neurons_list[-1]),
+                          input_shape_tuple=(data_handler.batch_size, neurons_list[0]),
+                          output_shape_tuple=(data_handler.batch_size, neurons_list[-1]),
                           num_input_features=neurons_list[0]
                           )
 
@@ -109,6 +107,10 @@ def main(cmdl_params):
                       optimizer_name='optimizer',
                       loss_name='L2',
                       print_step=100)
+
+    trainer.train()
+
+
 
 
 #     # ============
