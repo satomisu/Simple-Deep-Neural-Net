@@ -99,7 +99,7 @@ class DataHandler:
         self.num_train_samples = self.training_input.shape[0]
         self.num_eval_samples = self.evaluation_input.shape[0]
 
-    def _init_eval_data(self):
+    def init_eval_data(self):
         rand_eval_indices = random.sample(np.arange(0, self.num_eval_samples).tolist(), self.batch_size)
         randomly_sampled_eval_input = np.zeros((self.batch_size, self.input_feature_dim), dtype=np.float32)
         randomly_sampled_eval_label = np.zeros(self.batch_size, dtype=np.float32)

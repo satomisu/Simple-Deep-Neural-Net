@@ -7,10 +7,6 @@ import numpy as np
 import tensorflow as tf
 import argparse
 
-# from model.trainer import BaselineTrainer
-# from training.experiment_config import BaselineConfig as Config
-# from model.models import SimpleDNN
-# from training.training_parser_util import replace_None, make_keys_list, make_bool_list
 from util import name_and_path_util
 from util.datahandler import DataHandler
 from util.records import Recorder
@@ -110,27 +106,10 @@ def main(cmdl_params):
 
     trainer.train()
 
-
-
-
 #     # ============
 #     # Run training
 #     # ============
-#     # Config object
-#     config = set_up_experiment_config(exp_id,
-#                                       run_number,
-#                                       num_batches,
-#                                       epoch,
-#                                       learning_rate,
-#                                       training_data_path,
-#                                       output_dir_path,
-#                                       robot_list,
-#                                       layer_keys_list,
-#                                       neurons_list,
-#                                       activations_list,
-#                                       biases_list,
-#                                       record_eval_pred_at_each_epoch
-#                                       )
+
 #     # Train
 #     best_data_path, loss_list, robot_list, eval_pred_dict = train_baseline(config)
 #     # Organize data
@@ -142,41 +121,7 @@ def main(cmdl_params):
 #     np.save(f'{output_dir_path}/{best_weights_prediction_file_prefix}.npy', best_weights_prediction_paths_list)
 #     np.savez(f'{output_dir_path}/{loss_file_prefix}.npz', **{key: val for key, val in loss_dict.items()})
 #     np.savez(f'{output_dir_path}/{prediction_at_each_epoch_dict_prefix}.npz', **{key: val for key, val in eval_pred_dict.items()})
-#
 
-# # Set up experiment configuration
-# def set_up_experiment_config(exp_id,
-#                              run_num,
-#                              num_batches,
-#                              epoch,
-#                              learning_rate,
-#                              training_data_path,
-#                              output_dir_path,
-#                              robot_list,
-#                              layer_keys_list,
-#                              neurons_list,
-#                              activations_list,
-#                              biases_list,
-#                              record_eval_at_each_epoch
-#                              ):
-#     config = Config(
-#                     exp_id=exp_id,
-#                     run=run_num,
-#                     num_batches=num_batches,
-#                     epoch=epoch,
-#                     learning_rate=learning_rate,
-#                     data_path=training_data_path,
-#                     output_dir_path=output_dir_path,
-#                     robot_list=robot_list,
-#                     record_eval_at_each_epoch=record_eval_at_each_epoch
-#                     )
-#     config.set_net_specs(layer_keys_list, neurons_list, activations_list, biases_list)
-#     config.initialize()
-#     config.initialize_recorder_matter()
-#
-#     return config
-#
-#
 # # Train the model
 # def train_baseline(config):
 #     baseline_model = SimpleDNN(task_list=config.robot_list,

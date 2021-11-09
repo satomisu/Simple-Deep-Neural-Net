@@ -152,16 +152,20 @@ class Trainer:
     # Methods
     # =======
     def train(self):
+        # Print trainer info
         self.print_trainer_info()
 
-        # Train the model
+        # Print the data status
         self.data_handler.print_data_status()
 
+        # Initialize sgd step and time matters
         total_sgd_steps = self.epoch * self.num_batches
         sgd_step = 0
         self.time_1 = time.time()
+
+        # Start training
         for epoch in range(self.epoch):
-            self.data_handler._init_eval_data()
+            self.data_handler.init_eval_data()
             self.init_eval_data_dict()
             self.data_handler.batch_training_data()
             training_inputs = self.data_handler.get_batched_training_input_list()
@@ -181,37 +185,31 @@ class Trainer:
                     self.print_loss_info(sgd_step, total_sgd_steps, 'train step', cost, eval_loss)
                 sgd_step += 1
 
-            # # record evaluation data.
-            # current_eval_loss = self._record_eval_data()
-
-            # self.save_model(epoch, current_eval_loss)
+            # record evaluation data.
+            current_eval_loss = self._record_eval_data()
+            self.save_model(epoch, current_eval_loss)
 
             # self._record_eval_prediction_at_each_epoch()
             # if epoch == (self.epoch - 1):
             #     self._make_eval_prediction_dict_with_label_iunfo()
 
     def predict(self, return_dict=False):
+        # Get input feed dict
+        _input = self.data_handler.random_eval_inputs
+        _label = self.data_handler.random_eval_labels
+        feed_dict = {self.model.input_placeholder: _input}
+        prediction = self.sess.run(self.model.the_model,
+                                   feed_dict)
         if return_dict:
-            prediction_label_dict = {}
 
-            prediction = self.sess.run(self.model.the_model,
-                                       self.eval_input_features_feed_dict[self.task_list[0]])
-            label = self.eval_labels_list[0]
-            label = np.reshape(label, newshape=prediction.shape)
-            input_dict = self.eval_input_features_feed_dict[self.task_list[0]]
-            input = list(input_dict.values())[0]
-            prediction_label_dict[self.task_list[0]] = {'input': input,
-                                                        'label': label,
-                                                        'prediction': prediction}
+            prediction_dict = {'input': _input,
+                               'label': _label,
+                               'prediction': prediction}
 
-            return prediction_label_dict
+            return prediction_dict
 
         else:
-            prediction_list = []
-            prediction_list.append(
-                self.sess.run(self.model.the_model, self.eval_input_features_feed_dict[self.task_list[0]]))
-
-            return prediction_list
+            return _input, _label, prediction
 
     def save_model(self, epoch, eval_loss):
         if self.recorder.save_nbest:
@@ -269,8 +267,8 @@ class Trainer:
             return False
 
     def _record_eval_data(self):
-        loss = self.sess.run(self.loss_op, self.eval_label_feed_dict)
-        self.eval_loss_list[0].append(loss)
+        loss = self._get_eval_loss()
+        self.eval_loss_list.append(loss)
         return loss
 
     def _get_eval_loss(self):

@@ -109,7 +109,7 @@ class Recorder:
         self.epoch_list.append(epoch)
 
     def add_weights_bias_path(self, path):
-        self.records_output_path.append(path)
+        self.records_output_paths_list.append(path)
 
     def truncate_lists(self):
         while len(self.measure_list) > self.MAX_KEEP:
