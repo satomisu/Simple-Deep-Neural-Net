@@ -20,11 +20,11 @@ def main(cmdl_params):
 
     tf.compat.v1.disable_eager_execution()
 
-    # ====================================
+    # ==============================
     # Get parameters from the parser
-    # ====================================
-    output_path = cmdl_params.out_dir_path
-    output_dir_name = cmdl_params.odir
+    # ==============================
+    output_path = cmdl_params.output_path
+    output_dir_name = cmdl_params.out_dir_name
     exp_id = cmdl_params.id
     run_number = cmdl_params.run
     epoch = cmdl_params.epoch
@@ -34,8 +34,7 @@ def main(cmdl_params):
     neurons_list = cmdl_params.neurons
     activations_list = cmdl_params.acti
     biases_list = cmdl_params.bias
-    record_eval_pred_at_each_epoch = cmdl_params.save_eval_at_each_epoch
-    training_data_path = cmdl_params.dfile
+    training_data_path = cmdl_params.data_file
     label_norm_const = cmdl_params.norm_const
 
     # =========================
@@ -81,7 +80,6 @@ def main(cmdl_params):
     # =================================
     # Create Model and Trainer Objects
     # =================================
-
     dnn_model = SimpleDNN(layer_keys_list,
                           network_layers_dict,
                           input_shape_tuple=(data_handler.batch_size, neurons_list[0]),
@@ -99,9 +97,14 @@ def main(cmdl_params):
                       loss_name='L2',
                       print_step=100)
 
+    # ===============
     # Train the model
+    # ===============
     trainer.train()
 
+    # ===============
+    # Collect results
+    # ===============
     # Get loss per epoch list and save this
     loss_per_epoch = trainer.get_eval_loss()
     loss_file_path = recorder.save_data_to_pkl(loss_file_prefix, loss_per_epoch)
@@ -112,7 +115,7 @@ def main(cmdl_params):
     # Then look at training results
     # Plot learning curve
     plot_learning_curve(loss_file_path)
-    # Plot pred. vs. truth
+    # Plot prediction vs. truth
     plot_prediction_vs_truth(best_epoch_paths[-1])
 
 
@@ -126,11 +129,17 @@ def plot_learning_curve(loss_file_path):
         temp_list = temp_list[0:temp_list_len-1]
         return '.'.join(temp_list)
 
+    # Get output path prefix
     file_prefix = get_file_prefix()
 
+    # Load loss data
     loss_per_epoch = save_and_load.load_pkl_data(loss_file_path)
+
+    # Make x-axis data
     epoch = len(loss_per_epoch)
     x = np.arange(0, epoch)
+
+    # Plot and save
     plt.clf()
     fig = plt.figure()
     plt.plot(x, np.array(loss_per_epoch))
@@ -146,13 +155,16 @@ def plot_prediction_vs_truth(file_path):
         temp_list = temp_list[0:temp_list_len-1]
         return '.'.join(temp_list)
 
+    # Get output file prefix
     file_prefix = get_file_prefix()
 
+    # Load data
     data_list = save_and_load.load_pkl_data(file_path)
     prediction_data_dict = data_list[-1]
     label = prediction_data_dict['label']
     prediction = prediction_data_dict['prediction']
 
+    # Plot and save
     plt.clf()
     fig = plt.figure()
     plt.plot(prediction, label, marker='.', ls=' ')
@@ -161,11 +173,10 @@ def plot_prediction_vs_truth(file_path):
     fig.savefig(f'{file_prefix}_prediction_vs_truth.png', bbox_inches='tight')
 
 
-
-
 # ====
 # Util
 # ====
+# This function makes a dictionary with network structure detail for SimpleDNN object.
 def make_layers_dict(layer_keys_list,
                      neurons_list,
                      activations_list,
@@ -186,7 +197,7 @@ def make_layers_dict(layer_keys_list,
 # DATA
 # ====
 def init_data_handler(data_path, num_batches, norm_const, input_feature_dim, label_dim):
-    # Get data as nparray
+    # get_data_array returns training and eval inputs and labels.
     training_input, training_label, evaluation_input, evaluation_label = get_data_array(data_path)
 
     # Instantiate DataHandler
@@ -203,7 +214,8 @@ def init_data_handler(data_path, num_batches, norm_const, input_feature_dim, lab
     return data_handler
 
 
-# Modify this function for different data file.
+# Modify this function for a data file at hand.
+# Output should not be modified.
 def get_data_array(data_path):
     data_dict = np.load(data_path, allow_pickle=True)
     training_input = data_dict['training_input']
@@ -234,7 +246,7 @@ def training_parser():
         keys_list[-1] = 'output'
         return keys_list
 
-    # Make a list of boolean
+    # Make a list of booleans
     def make_bool_list(list_len, bool_value=True):
         an_arg = []
         for i in range(list_len):
@@ -248,57 +260,50 @@ def training_parser():
     # ====================
     # Required positionals
     # ====================
-    cmdl_parser.add_argument('odir',
+    cmdl_parser.add_argument('output_path',
                              type=str,
-                             help='output directory name'
+                             help='Output path for experiment results. This will be pre-pended to out_dir_name.')
+
+    cmdl_parser.add_argument('out_dir_name',
+                             type=str,
+                             help='Output directory name. e.g. Test.'
                              )
 
     cmdl_parser.add_argument('id',
                              type=str,
-                             help='experiment ID'
+                             help='Integer indicating experiment ID.'
                              )
 
     cmdl_parser.add_argument('run',
                              type=int,
-                             help='run (trial) number of each experiment'
+                             help='Run (trial) number of each experiment'
                              )
 
-    # ========
-    # Required
-    # ========
-    cmdl_parser.add_argument('-dfile',
+    # ========================
+    # Required non-positionals
+    # ========================
+    cmdl_parser.add_argument('-data_file',
                              type=str,
                              required=True,
-                             help='path to training data file'
+                             help='Path to training data file.'
                              )
-
-    cmdl_parser.add_argument('-norm_const',
-                             type=float,
-                             required=False,
-                             default=1,
-                             help='normalization constant for output. Default is unity')
-
-    cmdl_parser.add_argument('-out_dir_path',
-                             required=True,
-                             type=str,
-                             help='path to data output dir. This will be pre-pended to odir')
 
     cmdl_parser.add_argument('-epoch',
                              type=int,
                              required=True,
-                             help='training epoch'
+                             help='Training epoch.'
                              )
 
     cmdl_parser.add_argument('-minibatch',
                              type=int,
                              required=True,
-                             help='number of minibatches'
+                             help='Number of minibatches.'
                              )
 
     cmdl_parser.add_argument('-lrn_rate',
                              type=float,
                              required=True,
-                             help='learning rate'
+                             help='Learning rate.'
                              )
 
     cmdl_parser.add_argument('-neurons',
@@ -311,27 +316,28 @@ def training_parser():
                              type=str,
                              nargs='*',
                              required=True,
-                             help='A list for activation functions for each layer. Order: from input to output.'
+                             help='A list for activation functions for each layer. Order: from the first hidden layer to output.'
                              )
 
     # ========
     # Optional
     # ========
+    cmdl_parser.add_argument('-norm_const',
+                             type=float,
+                             required=False,
+                             default=1,
+                             help='Normalization constant for label. Default is unity.')
+
     cmdl_parser.add_argument('-P',
                              action='store_true',
                              default=False,
-                             help='flag this option to see parsed args')
+                             help='Flag this option to see a summary of parsed args.')
 
     cmdl_parser.add_argument('-bias',
                              action='store_true',
                              default=False,
-                             help='flag when using bias'
+                             help='Flag when using bias.'
                              )
-
-    cmdl_parser.add_argument('-save_eval_at_each_epoch',
-                             default=False,
-                             action='store_true',
-                             help='flag this option when recording eval prediction at each epoch')
 
     # =============
     # Place holders
@@ -339,8 +345,9 @@ def training_parser():
     cmdl_parser.add_argument('-layer_key_list',
                              default=[]
                              )
-
+    # ===============
     # Parse arguments
+    # ===============
     args = cmdl_parser.parse_args()
 
     # ======================
@@ -362,6 +369,7 @@ def training_parser():
         exit(1)
     # ======================
 
+    # Format some args
     args.bias = make_bool_list(len(args.neurons), bool_value=args.bias)
     args.layer_key_list = make_keys_list(len(args.neurons), prefix='HL')
     args.acti = replace_None(args.acti)
@@ -371,14 +379,14 @@ def training_parser():
     # =====
     if args.P:
         print('=== Output Data Info ===')
-        print(f'{"output dir":>30}: {args.odir:<}')
+        print(f'{"output dir":>30}: {args.out_dir_name:<}')
         print(f'{"experiment ID #":>30}: {args.id:<01}')
         print(f'{"experiment run #":>30}: {args.run:<01}')
 
         print('\n')
         print('=== Data ===')
-        print(f'{"Data Path":>30}: {args.dfile}')
-        print(f'{"Label Normalization Constant":>30}: {args.dfile}')
+        print(f'{"Data Path":>30}: {args.data_file}')
+        print(f'{"Label Normalization Constant":>30}: {args.norm_const}')
 
         print('\n')
         print('=== Training Info ===')
