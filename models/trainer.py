@@ -196,6 +196,8 @@ class Trainer:
         feed_dict = {self.model.input_placeholder: _input}
         prediction = self.sess.run(self.model.the_model,
                                    feed_dict)
+        _label = self.data_handler.un_normalize_label(_label)
+        prediction = self.data_handler.un_normalize_label(prediction)
         if return_dict:
 
             prediction_dict = {'input': _input,

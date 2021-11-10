@@ -151,6 +151,14 @@ class DataHandler:
     # ==============
     # Public Methods
     # --------------
+    # Converts normalized data back to original value
+    def un_normalize_label(self, an_array):
+        if self.norm_const == 1:
+            return an_array
+        else:
+            an_array = np.array(an_array)
+            return an_array*self.norm_const
+
     # Makes self.random_eval_inputs/labels
     #   by randomly sampling from self.eval_input/label
     def init_eval_data(self):
