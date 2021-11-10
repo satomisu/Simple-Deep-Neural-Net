@@ -4,12 +4,12 @@ import numpy as np
 def prediction_accuracy(truth, prediction):
     # Assumes that inputs are 1d arrays
     # Get dimensions and lengths of truth and prediction
-    dim_truth = len(truth.shape)
-    dim_prediction = len(truth.shape)
+    truth_dim_1d = 1 in truth.shape
+    prediction_dim_1d = 1 in prediction.shape
     len_truth = len(truth)
     len_prediction = len(prediction)
     # If both of them are 1d and have the same number of elements
-    if dim_truth == 2 and dim_prediction == 2:
+    if truth_dim_1d and prediction_dim_1d:
         if len_truth == len_prediction:
             # Compute prediction accuracy
             accuracy_list = []
@@ -32,6 +32,8 @@ def prediction_accuracy(truth, prediction):
 
 def compute_accuracy(truth, prediction):
     pred_to_truth_ratio = prediction/truth
+    # Absolute error between the truth and prediction
     error = abs(1-pred_to_truth_ratio)
+    # The accuracy percentage
     accuracy = 100*(1-error)
     return accuracy
