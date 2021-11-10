@@ -10,8 +10,8 @@ R=1         # Run number
 
 # Data path
 data_path='./DATA/Kuka_swept_volume_data.pkl'
-# Normalization constant for the label
-norm_const=311.17   # Arbitrarily picked from Kuka's sv
+# Normalization constant for the training label
+norm_const=311.17
 
 # Network parameters
 neur="14 1026 512 256 1"          # Number of neurons in each layer, including input + output.
