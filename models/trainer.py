@@ -4,6 +4,8 @@ import matplotlib.pyplot as plt
 import time
 import os
 
+from util import analyze
+
 
 # =====================
 # BaselineTrainer Class
@@ -271,8 +273,13 @@ class Trainer:
         else:
             print(f'time since last message: {time.time() - self.time_1:0.2f}s')
         self.time_1 = time.time()
+        # Compute accuracy
+        _input, _label, prediction = self.predict(return_dict=False)
+        del _input
+        accuracy_mean, accuracy_std = analyze.prediction_accuracy(_label, prediction)
         print(f'train loss: {train_loss:0.5f}')
         print(f'eval loss:  {eval_loss:0.5f}')
+        print(f'mean accuracy (%): {accuracy_mean} +/- {accuracy_std}')
 
     def print_weights(self):
         self.model.print_tensor_specs('weights', self.model.weights_dict)
