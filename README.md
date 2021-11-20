@@ -38,6 +38,12 @@ Implements DataHandler class. See &nbsp; train_model.py &nbsp; for usage example
 ### records.py
 Implements Recorder class. See &nbsp; train_model.py &nbsp; for usage example. Keeps track of and records quantities to be recorded, e.g., loss values. 
 
+### nbest.py
+Implements NBest class. This is used by Records class. This object was written to keep track of the oder of values stored in a dynamic list. 
+
+### save_and_load.py and name_and_path_util.py
+Modules for saving and loading files, path operations, and naming experiments, output names. 
+
 ## models
 
 
