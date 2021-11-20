@@ -1,3 +1,6 @@
+# ====================================
+# Analysis module for training results
+# ====================================
 import numpy as np
 
 
