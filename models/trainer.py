@@ -1,15 +1,13 @@
 import tensorflow as tf
-import numpy as np
 import matplotlib.pyplot as plt
 import time
-import os
 
 from util import analyze
 
 
-# =====================
-# BaselineTrainer Class
-# =====================
+# =============
+# Trainer Class
+# =============
 class Trainer:
     def __init__(self,
                  model: object,
@@ -19,7 +17,7 @@ class Trainer:
                  learning_rate=0.1,
                  num_batches=100,
                  optimizer_name='optimizer',
-                 loss_name='L2',
+                 loss_name='MSE',
                  print_step=100
                  ):
 
@@ -28,10 +26,9 @@ class Trainer:
         self.num_batches = num_batches
         self.optimizer_name = optimizer_name
         self.loss_name = loss_name
-        self.print_step = print_step
+        self.print_step = print_step    # Message will be printed every print_step during training.
         self.recorder = recorder
         self.data_handler = data_handler
-        self.time_1 = None
 
         # Graph components, initialized by self.initialize_trainer_base()
         self.graph = None
@@ -56,6 +53,7 @@ class Trainer:
         self.eval_input_feed_dict = {}
 
         # Training record
+        self.time_1 = None  # Time when the training starts.
         self.eval_loss_list = []
         self.eval_prediction_list = []
         self.eval_prediction_dict = {}
@@ -67,14 +65,14 @@ class Trainer:
     # =================
     def _initialization_op(self, model):
         self._init_model_graph(model)
-        self.initialize_trainer_base()
+        self.initialize_trainer()
         self.init_session()
         self.model.show_model_trainables(self.graph)
         self.model.show_model_collections(self.graph)
         self.model.show_model_variables(self.graph)
         self.model.show_model_ops(self.graph)
 
-    # Tested
+    # Initialize training model graph
     def _init_model_graph(self, model):
         graph = tf.compat.v1.Graph()
         with graph.as_default():
@@ -95,8 +93,7 @@ class Trainer:
     def assign_graph(self, graph):
         self.graph = graph
 
-    # Tested
-    def initialize_trainer_base(self):
+    def initialize_trainer(self):
         with self.graph.as_default():
             self._build_loss_op()
             self._build_optimizer()
@@ -114,12 +111,10 @@ class Trainer:
         self.global_step = tf.compat.v1.Variable(0, name='global_step')
         self.optimization_op = self.optimizer.minimize(self.loss_op, global_step=self.global_step)
 
-    # Tested
     def init_session(self):
         self.sess = tf.compat.v1.Session(graph=self.graph)
         self.sess.run(self.graph_initialization_op)
 
-    # Tested
     def init_eval_data_dict(self):
         self.eval_data_feed_dict = {self.placeholder_dict['input_ph']: self.data_handler.random_eval_inputs,
                                     self.placeholder_dict['output_ph']: self.data_handler.random_eval_labels}
@@ -154,9 +149,6 @@ class Trainer:
     # Methods
     # =======
     def train(self):
-        # Print trainer info
-        self.print_trainer_info()
-
         # Print the data status
         self.data_handler.print_data_status()
 
@@ -281,22 +273,8 @@ class Trainer:
         print(f'eval loss:  {eval_loss:0.5f}')
         print(f'mean accuracy (%): {accuracy_mean} +/- {accuracy_std}')
 
-    def print_weights(self):
-        self.model.print_tensor_specs('weights', self.model.weights_dict)
-        self.model.print_tensor_specs('biases', self.model.biases_dict)
-
     def print_model_trainables(self):
         self.model.show_model_trainables(self.graph)
-
-    def clear_all_records(self, ckpt=False, tensorboard=False):
-        self.clear_weights_bias_dir()
-
-    def clear_weights_bias_dir(self):
-        self.recorder.clear_weights_bias_dir()
-
-    def print_trainer_info(self):
-        print('\n')
-        print('=== Trainer Info ===')
 
     def plot_prediction(self, show=True):
         prediction_list = self.predict()
