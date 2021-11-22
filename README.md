@@ -10,6 +10,9 @@ A simple fully connected, feed-forward deep neural network model for regression.
 
 **Loss** is MSE loss as in tf.compat.v1.losses.mean_squared_error(). To use another option, make appropriate changes to Trainer._build_loss_op(). <br />
 
+# Requirement
+tensorflow 2 and python 3.7. 
+
 # Sample Data
 DATA/Kuka_swept_volume_data.pkl<br />
 Load using np.load(file_path).<br /> 
