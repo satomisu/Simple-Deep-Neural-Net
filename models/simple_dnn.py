@@ -16,21 +16,22 @@ class SimpleDNN:
         # ==================
         # Primary Attributes
         # ==================
+        # List of keys for each DNN layer. Order: input to output.
         self.layer_keys_list = layer_keys_list
+        # layer_dict keys: 'neurons', 'activation', 'bias', 'layer name' = layer_key
         self.layer_dict = layer_dict
+        # Number of input features. Assumes input is a vector.
         self.num_input_features = num_input_features
+        # Input shape in python tuple, e.g., (100, 14).
         self.input_shape_tuple = input_shape_tuple
+        # Output shape in python tuple.
         self.output_shape_tuple = output_shape_tuple
 
-        # ====================
-        # Secondary Attributes
-        # ====================
+        # =============================
+        # Set by self.build_model_graph
+        # =============================
         self.the_model = None
 
-        # =============================
-        # Secondary attributes
-        # Derived from the primary ones
-        # =============================
         self.input_placeholder = None
         self.output_placeholder = None
         self.single_input_placeholder = None
@@ -45,10 +46,11 @@ class SimpleDNN:
         self.build_model_graph()
 
     def build_model_graph(self):
+        # Initializes input and output placeholders.
         self.init_io_placeholders()
+        # Builds a simple dnn.
         self._build_simple_dnn()
 
-    # Tested
     def _build_simple_dnn(self):
         for i in range(len(self.layer_keys_list)):
             layer_key = self.layer_keys_list[i]
@@ -91,6 +93,7 @@ class SimpleDNN:
                                                        shape=self.output_shape_tuple,
                                                        name='output')
 
+    # Builds a simple layer.
     def build_simple_layer(self, layer_key,
                            in_neuron,
                            out_neuron,
@@ -183,40 +186,40 @@ class SimpleDNN:
     # ====
     # Util
     # ====
-    # Tested
     def show_model_trainables(self, graph):
         with tf.compat.v1.Session(graph=graph):
             # The next two lines return identical list
             # trainables = tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.TRAINABLE_VARIABLES)
             trainables = graph.get_collection_ref(name='trainable_variables')
+        print('\n')
         print('=== Trainable Variables ===')
         for element in trainables:
             print(f'name: {element.name}')
             print(f'    is trainable: {element.trainable}')
             print(f'    shape: {element.shape}')
 
-    # Tested
     def show_model_collections(self, graph):
         # Gets names of collection of this graph.
         with tf.compat.v1.Session(graph=graph):
             collection_list = graph.collections
+        print('\n')
         print('=== Collections ===')
         for element in collection_list:
             print(element)
 
-    # Tested
     def show_model_variables(self, graph):
         with tf.compat.v1.Session(graph=graph):
             variables = graph.get_collection_ref(name='variables')
+        print('\n')
         print('=== Variables ===')
         for element in variables:
             print(element.name)
             print(element.trainable)
 
-    # Tested
     def show_model_ops(self, graph):
         with tf.compat.v1.Session(graph=graph):
             ops = graph.get_collection_ref(name='train_op')
+        print('\n')
         print('=== ops ===')
         for element in ops:
             print(element.name)
@@ -224,6 +227,7 @@ class SimpleDNN:
     def print_tensor_specs(self,
                            tensor_name: str,
                            tensor_dict: dict):
+        print('\n')
         print('===========================')
         print(f'=== {tensor_name} ===')
         for weights, value in tensor_dict.items():
