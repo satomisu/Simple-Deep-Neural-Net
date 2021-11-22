@@ -44,7 +44,14 @@ Implements NBest class. This is used by Records class. This object was written t
 ### save_and_load.py and name_and_path_util.py
 Modules for saving and loading files, path operations, and naming experiments, output names. 
 
-## models
+### analyze.py 
+Module for analyzing training results.
 
+## models
+### simple_dnn.py
+Implements SimpleDNN class. This is a fully connected feed forward network. Specify the number of layers, neurons, and activations in train_dnn_model.sh.
+
+### trainer.py
+Implements Trainder class. Builds training graph for SimpleDNN and trains the model. 
 
 
