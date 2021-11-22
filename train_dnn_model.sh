@@ -18,7 +18,7 @@ neur="14 1026 512 256 1"          # Number of neurons in each layer, including i
 acti="None relu relu relu None"   # Activation function for each layer, including input.
                                   # Make sure that the first element (for input) is None.
 # Training parameters
-E=2           # Total training epoch
+E=2          # Total training epoch
 batch=100     # Mini-batch size
 lrn_rate=0.1  # Learning rate
 

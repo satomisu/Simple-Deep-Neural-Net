@@ -75,7 +75,7 @@ def main(cmdl_params):
                         less_is_better=True,
                         exp_name=experiment_name,
                         output_path=output_dir_path,
-                        measure_name='L2')
+                        measure_name='MSE')
 
     # =================================
     # Create Model and Trainer Objects
